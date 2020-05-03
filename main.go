@@ -18,10 +18,10 @@ import (
 var token = os.Getenv("TOKEN")
 var api = slack.New(token)
 
-type URLVeri struct {
-	token     string `json:"token"`
-	challenge string `json:"challenge"`
-	_type     string `json:"type"`
+type Verif struct {
+	Token     string `json:"token" form:"token" query:"token"`
+	Challenge string `json:"challenge" form:"challenge" query:"challenge"`
+	Type      string `json:"type" form:"type" query:"type"`
 }
 
 func handle(c echo.Context) error {
@@ -36,14 +36,13 @@ func handle(c echo.Context) error {
 		errLog(e)
 		return e
 	}
-
 	if eventsAPIEvent.Type == slackevents.URLVerification {
-		var param URLVeri
-		if err := c.Bind(param); err != nil {
+		param := new(Verif)
+		if err := json.Unmarshal(buf.Bytes(), &param); err != nil {
 			errLog(err)
 			return err
 		}
-		return c.String(200, param.challenge)
+		return c.String(200, param.Challenge)
 	}
 
 	if eventsAPIEvent.Type == slackevents.CallbackEvent {
