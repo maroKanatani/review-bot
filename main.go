@@ -31,7 +31,7 @@ func handle(c echo.Context) error {
 	buf.ReadFrom(r.Body)
 	body := buf.String()
 	fmt.Println(body)
-	eventsAPIEvent, e := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionVerifyToken(&slackevents.TokenComparator{VerificationToken: token}))
+	eventsAPIEvent, e := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionNoVerifyToken())
 	if e != nil {
 		errLog(e)
 		return e
