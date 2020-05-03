@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
@@ -29,6 +30,7 @@ func handle(c echo.Context) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(r.Body)
 	body := buf.String()
+	fmt.Println(body)
 	eventsAPIEvent, e := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionVerifyToken(&slackevents.TokenComparator{VerificationToken: token}))
 	if e != nil {
 		errLog(e)
