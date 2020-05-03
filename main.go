@@ -43,5 +43,10 @@ func main() {
 		}
 	})
 	fmt.Println("[INFO] Server listening")
-	http.ListenAndServe(":3000", nil)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+	http.ListenAndServe(":"+port, nil)
 }
