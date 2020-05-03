@@ -49,7 +49,11 @@ func handle(c echo.Context) error {
 		innerEvent := eventsAPIEvent.InnerEvent
 		switch ev := innerEvent.Data.(type) {
 		case *slackevents.AppMentionEvent:
-			api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
+			_, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
+			if err != nil {
+				errLog(err)
+				return err
+			}
 		}
 	}
 
