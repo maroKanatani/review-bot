@@ -173,7 +173,7 @@ func onAppMentioned(reqJSON *structs.RequestJSON, channel string) error {
 					util.ErrLog(err)
 					return err
 				}
-				break
+				return nil
 			}
 
 			file, err := CreateTempDirAndFile(dirName, fStruct.Name)
