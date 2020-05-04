@@ -133,7 +133,7 @@ func handle(c echo.Context) error {
 
 				os.Chdir("..")
 
-				const CheckStyle = "checkstyle"
+				const CheckStyle = "./checkstyle"
 				const StyleXML = "mycheck.xml"
 				path := filepath.Join(dirName, reqJSON.Event.Files[0].Name)
 				cmd = exec.Command(CheckStyle, "-c", StyleXML, path)
