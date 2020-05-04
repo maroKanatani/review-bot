@@ -163,7 +163,7 @@ func onAppMentioned(reqJSON *structs.RequestJSON, ev *slackevents.AppMentionEven
 		dirName := util.NewSecret(32)
 		firstTextBlock := slack.NewTextBlockObject(slack.PlainTextType, "お疲れ様です:wave:\nレビュー結果が出ましたのでご確認ください", true, false)
 		firstSection := slack.NewSectionBlock(firstTextBlock, nil, nil)
-		blocks := []slack.Block{firstSection, slack.NewDividerBlock()}
+		blocks := []slack.Block{firstSection}
 		// var reviewString string
 
 		for _, fStruct := range reqJSON.Event.Files {
