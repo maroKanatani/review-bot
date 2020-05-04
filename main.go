@@ -77,42 +77,47 @@ func handle(c echo.Context) error {
 		innerEvent := eventsAPIEvent.InnerEvent
 		switch ev := innerEvent.Data.(type) {
 		case *slackevents.AppMentionEvent:
+			log.Println("---------------------------")
+			log.Printf("%+v\n", ev)
+			log.Println("---------------------------")
 			reqJSON := new(structs.RequestJSON)
 			if err := json.Unmarshal(buf.Bytes(), &reqJSON); err != nil {
 				util.ErrLog(err)
 				return err
 			}
 
-			err := onAppMentioned(reqJSON, ev)
+			err := onAppMentioned(reqJSON, ev.Channel)
 			if err != nil {
 				util.ErrLog(err)
 				return err
 			}
 
-			// _, _, err = api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
-			// if err != nil {
-			// 	util.ErrLog(err)
-			// 	return err
-			// }
+		// _, _, err = api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
+		// if err != nil {
+		// 	util.ErrLog(err)
+		// 	return err
+		// }
 
-			// case *slackevents.MessageEvent:
-			// 	reqJSON := new(structs.RequestJSON)
-			// 	if err := json.Unmarshal(buf.Bytes(), &reqJSON); err != nil {
-			// 		util.ErrLog(err)
-			// 		return err
-			// 	}
+		case *slackevents.MessageEvent:
+			log.Println("---------------------------")
+			log.Printf("%+v\n", ev)
+			log.Println("---------------------------")
+			if ev.ChannelType == "im" {
+				reqJSON := new(structs.RequestJSON)
+				if err := json.Unmarshal(buf.Bytes(), &reqJSON); err != nil {
+					util.ErrLog(err)
+					return err
+				}
 
-			// 	err := onAppMentioned(reqJSON, ev)
-			// 	if err != nil {
-			// 		util.ErrLog(err)
-			// 		return err
-			// 	}
+				if len(reqJSON.Event.Files) != 0 {
+					err := onAppMentioned(reqJSON, ev.Channel)
+					if err != nil {
+						util.ErrLog(err)
+						return err
 
-			// 	_, _, err = api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
-			// 	if err != nil {
-			// 		util.ErrLog(err)
-			// 		return err
-			// 	}
+					}
+				}
+			}
 		}
 	}
 
@@ -145,16 +150,14 @@ func CreateTempDirAndFile(dirName string, fName string) (*os.File, error) {
 	return file, nil
 }
 
-func onAppMentioned(reqJSON *structs.RequestJSON, ev *slackevents.AppMentionEvent) error {
+func onAppMentioned(reqJSON *structs.RequestJSON, channel string) error {
 	log.Println("---------------------------")
 	log.Printf("%+v\n", reqJSON)
 	log.Println("---------------------------")
-	log.Println("---------------------------")
-	log.Printf("%+v\n", ev)
-	log.Println("---------------------------")
+
 	if len(reqJSON.Event.Files) == 0 {
 		log.Println("No files .")
-		_, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText("こんにちは！review-botです。\n私にMentionを付けてファイルを送信してください。", false))
+		_, _, err := api.PostMessage(channel, slack.MsgOptionText("こんにちは！review-botです。\n私にMentionを付けてファイルを送信してください。", false))
 		if err != nil {
 			util.ErrLog(err)
 			return err
@@ -206,7 +209,7 @@ func onAppMentioned(reqJSON *structs.RequestJSON, ev *slackevents.AppMentionEven
 		}
 
 		// _, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText(reviewString, false))
-		_, _, err := api.PostMessage(ev.Channel, slack.MsgOptionBlocks(blocks...))
+		_, _, err := api.PostMessage(channel, slack.MsgOptionBlocks(blocks...))
 		if err != nil {
 			util.ErrLog(err)
 			return err
