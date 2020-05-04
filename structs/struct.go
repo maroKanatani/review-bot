@@ -1,6 +1,9 @@
 package structs
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Verif struct {
 	Token     string `json:"token" form:"token" query:"token"`
@@ -30,19 +33,31 @@ type File struct {
 }
 
 type CheckInfo struct {
-	Level     string
-	FileName  string
-	LineNum   string
-	ColumnNum string
-	Message   string
-	CheckType string
+	Level        string
+	FileName     string
+	FileFullPath string
+	LineNum      string
+	ColumnNum    string
+	Message      string
+	CheckType    string
 }
 
 func (c CheckInfo) ShowInfo() {
 	fmt.Println("############################")
-	fmt.Println("【File】" + c.FileName)
+	fmt.Println("【FileFullPath】" + c.FileFullPath)
+	fmt.Println("【FileName】" + c.FileName)
 	fmt.Println("【Message】" + c.Message)
 	fmt.Println("【Line Num】" + c.LineNum)
 	fmt.Println("【Column】" + c.ColumnNum)
 	fmt.Println("【Type】" + c.CheckType)
+}
+
+func (c CheckInfo) CreateReviewLine(line string) string {
+	lineInfo := "【行番号】" + c.LineNum + "行目 "
+	if c.ColumnNum != "" {
+		lineInfo = lineInfo + c.ColumnNum + "文字目"
+	}
+	message := "【内容】" + c.Message
+	s := []string{line, lineInfo, message}
+	return "\n" + strings.Join(s, "\n")
 }

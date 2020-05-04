@@ -37,7 +37,10 @@ func divCheckLine(line string) structs.CheckInfo {
 	c.Level = tokens[0]
 
 	splitted := strings.Split(tokens[1], ":")
-	c.FileName = splitted[0]
+	c.FileFullPath = splitted[0]
+	// Get file name
+	_, f := filepath.Split(splitted[0])
+	c.FileName = f
 	c.LineNum = splitted[1]
 	if !(len(splitted) < 3) {
 		c.ColumnNum = splitted[2]
@@ -87,7 +90,6 @@ func handle(c echo.Context) error {
 
 			err := onAppMentioned(reqJSON, ev)
 			if err != nil {
-
 				util.ErrLog(err)
 				return err
 			}
@@ -103,55 +105,78 @@ func handle(c echo.Context) error {
 	return c.String(200, "OK")
 }
 
-func CreateTempDir() {
+func CreateTempDirAndFile(dirName string, fName string) (*os.File, error) {
+	_, err := os.Stat(dirName)
+	if os.IsNotExist(err) {
+		err := os.Mkdir(dirName, 0777)
+		if err != nil {
+			util.ErrLog(err)
+			return nil, err
+		}
+	}
+
+	_, err = os.Stat(filepath.Join(dirName, fName))
+	if os.IsExist(err) {
+		util.ErrLog(err)
+		return nil, err
+	}
+
+	os.Chdir(dirName)
+	file, err := os.Create(fName)
+	if err != nil {
+		util.ErrLog(err)
+		return nil, err
+	}
+	os.Chdir("..")
+	return file, nil
 }
 
 func onAppMentioned(reqJSON *structs.RequestJSON, ev *slackevents.AppMentionEvent) error {
 	if len(reqJSON.Event.Files) == 0 {
 		log.Println("No files .")
+		_, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText("こんにちは！review-botです。\n私にMentionを付けてファイルを送信してください。", false))
+		if err != nil {
+			util.ErrLog(err)
+			return err
+		}
 	} else {
 		dirName := util.NewSecret(32)
-		fName := reqJSON.Event.Files[0].Name
-		err := os.Mkdir(dirName, 0777)
-		if err != nil {
-			util.ErrLog(err)
-			return err
-		}
-		os.Chdir(dirName)
-		file, err := os.Create(fName)
-		if err != nil {
-			util.ErrLog(err)
-			return err
-		}
-		err = api.GetFile(reqJSON.Event.Files[0].URLPrivateDownload, file)
-		if err != nil {
-			util.ErrLog(err)
-			return err
-		}
+		var reviewString string
 
-		file.Close()
-
-		os.Chdir("..")
-
-		const CheckStyleJar = "checkstyle-8.32-all.jar"
-		const StyleXML = "mycheck.xml"
-		fPath := filepath.Join(dirName, fName)
-		cmd := exec.Command("java", "-jar", CheckStyleJar, "-c", StyleXML, fPath)
-		s, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Println(string(s))
-			return err
-		}
-
-		lines := strings.Split(string(s), "\n")
-		for _, line := range lines {
-			c := divCheckLine(line)
-			if c.Level == "" {
-				continue
+		for _, fStruct := range reqJSON.Event.Files {
+			reviewString = reviewString + fStruct.Name + "\n"
+			file, err := CreateTempDirAndFile(dirName, fStruct.Name)
+			if err != nil {
+				return err
 			}
-			c.ShowInfo()
+			err = api.GetFile(fStruct.URLPrivateDownload, file)
+			if err != nil {
+				util.ErrLog(err)
+				return err
+			}
+			defer file.Close()
+
+			const CheckStyleJar = "checkstyle-8.32-all.jar"
+			const StyleXML = "mycheck.xml"
+			fPath := filepath.Join(dirName, fStruct.Name)
+			cmd := exec.Command("java", "-jar", CheckStyleJar, "-c", StyleXML, fPath)
+
+			reviewResult, err := cmd.CombinedOutput()
+			if err != nil {
+				fmt.Println(string(reviewResult))
+				return err
+			}
+			lines := strings.Split(string(reviewResult), "\n")
+			for _, line := range lines {
+				c := divCheckLine(line)
+				if c.Level == "" {
+					continue
+				}
+				reviewString = reviewString + c.CreateReviewLine(line)
+			}
+			reviewString = reviewString + "\n"
 		}
-		_, _, err = api.PostMessage(ev.Channel, slack.MsgOptionText(string(s), false))
+		_, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText(reviewString, false))
 		if err != nil {
 			util.ErrLog(err)
 			return err
