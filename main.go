@@ -133,14 +133,14 @@ func handle(c echo.Context) error {
 
 				os.Chdir("..")
 
-				const CheckStyle = "./checkstyle"
+				const CheckStyleJar = "checkstyle-8.32-all.jar"
 				const StyleXML = "mycheck.xml"
 				path := filepath.Join(dirName, reqJSON.Event.Files[0].Name)
-				cmd = exec.Command(CheckStyle, "-c", StyleXML, path)
+				cmd = exec.Command("java", "-jar", CheckStyleJar, "-c", StyleXML, path)
 				s, err := cmd.CombinedOutput()
 				if err != nil {
 					fmt.Println(string(s))
-					log.Fatal(err)
+					return err
 				}
 				// lines := strings.Split(string(s), "\n")
 
