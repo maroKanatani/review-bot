@@ -28,7 +28,7 @@ func divCheckLine(line string) structs.CheckInfo {
 
 	var c structs.CheckInfo
 
-	if len(tokens) < 2 {
+	if len(tokens) < 2 || !(tokens[0] == "[WARN]" || tokens[0] == "[ERROR]") {
 		return c
 	}
 
