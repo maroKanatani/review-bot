@@ -2,12 +2,10 @@ package main
 
 import (
 	"bytes"
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/big"
+	"math/rand"
 	"os"
 
 	"github.com/labstack/echo"
@@ -154,13 +152,12 @@ func errLog(err error) {
 	log.Printf("%+v\n", errors.WithStack(err))
 }
 
-func newSecret(length int) string {
-	runes := make([]byte, length)
+func newSecret(n int) string {
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-	for i := 0; i < length; i++ {
-		num, _ := rand.Int(rand.Reader, big.NewInt(255))
-		runes[i] = byte(num.Int64())
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
 	}
-
-	return base64.RawStdEncoding.EncodeToString(runes)
+	return string(b)
 }
