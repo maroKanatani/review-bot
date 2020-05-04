@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/exec"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -104,6 +105,21 @@ func handle(c echo.Context) error {
 					errLog(err)
 					return err
 				}
+				cmd := exec.Command("ls", "-laH")
+				ls, err := cmd.CombinedOutput()
+				if err != nil {
+					errLog(err)
+					return err
+				}
+				log.Println(string(ls))
+
+				cmd = exec.Command("ls", "-laH", "..")
+				ls, err = cmd.CombinedOutput()
+				if err != nil {
+					errLog(err)
+					return err
+				}
+				log.Println(string(ls))
 				file.Close()
 				// os.Chdir("..")
 				// err = os.RemoveAll(dirName)
