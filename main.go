@@ -23,6 +23,7 @@ var token = os.Getenv("TOKEN")
 var api = slack.New(token)
 
 func divCheckLine(line string) structs.CheckInfo {
+	log.Println(line)
 	tokens := strings.Split(line, " ")
 
 	var c structs.CheckInfo
