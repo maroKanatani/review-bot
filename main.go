@@ -129,12 +129,30 @@ func handle(c echo.Context) error {
 				}
 				log.Println(string(ls))
 				file.Close()
+
+				os.Chdir("..")
+
+				const CheckStyleJar = "checkstyle-8.32-all.jar"
+				const StyleXML = "mycheck.xml"
+				cmd = exec.Command("java", "-jar", CheckStyleJar, "-c", StyleXML, reqJSON.Event.Files[0].Name)
+				s, err := cmd.CombinedOutput()
+				if err != nil {
+					fmt.Println(string(s))
+					log.Fatal(err)
+				}
+				// lines := strings.Split(string(s), "\n")
+
 				// os.Chdir("..")
 				// err = os.RemoveAll(dirName)
 				// if err != nil {
 				// 	errLog(err)
 				// 	return err
 				// }
+				_, _, err = api.PostMessage(ev.Channel, slack.MsgOptionText(string(s), false))
+				if err != nil {
+					errLog(err)
+					return err
+				}
 			}
 
 			_, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
