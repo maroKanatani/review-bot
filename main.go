@@ -82,12 +82,6 @@ func handle(c echo.Context) error {
 				util.ErrLog(err)
 				return err
 			}
-			log.Println("---------------------------")
-			log.Printf("%+v\n", reqJSON)
-			log.Println("---------------------------")
-			log.Println("---------------------------")
-			log.Printf("%+v\n", ev)
-			log.Println("---------------------------")
 
 			err := onAppMentioned(reqJSON, ev)
 			if err != nil {
@@ -95,11 +89,30 @@ func handle(c echo.Context) error {
 				return err
 			}
 
-			_, _, err = api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
-			if err != nil {
-				util.ErrLog(err)
-				return err
-			}
+			// _, _, err = api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
+			// if err != nil {
+			// 	util.ErrLog(err)
+			// 	return err
+			// }
+
+			// case *slackevents.MessageEvent:
+			// 	reqJSON := new(structs.RequestJSON)
+			// 	if err := json.Unmarshal(buf.Bytes(), &reqJSON); err != nil {
+			// 		util.ErrLog(err)
+			// 		return err
+			// 	}
+
+			// 	err := onAppMentioned(reqJSON, ev)
+			// 	if err != nil {
+			// 		util.ErrLog(err)
+			// 		return err
+			// 	}
+
+			// 	_, _, err = api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
+			// 	if err != nil {
+			// 		util.ErrLog(err)
+			// 		return err
+			// 	}
 		}
 	}
 
@@ -133,6 +146,12 @@ func CreateTempDirAndFile(dirName string, fName string) (*os.File, error) {
 }
 
 func onAppMentioned(reqJSON *structs.RequestJSON, ev *slackevents.AppMentionEvent) error {
+	log.Println("---------------------------")
+	log.Printf("%+v\n", reqJSON)
+	log.Println("---------------------------")
+	log.Println("---------------------------")
+	log.Printf("%+v\n", ev)
+	log.Println("---------------------------")
 	if len(reqJSON.Event.Files) == 0 {
 		log.Println("No files .")
 		_, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText("こんにちは！review-botです。\n私にMentionを付けてファイルを送信してください。", false))
@@ -142,10 +161,17 @@ func onAppMentioned(reqJSON *structs.RequestJSON, ev *slackevents.AppMentionEven
 		}
 	} else {
 		dirName := util.NewSecret(32)
-		var reviewString string
+		firstTextBlock := slack.NewTextBlockObject(slack.PlainTextType, "お疲れ様です:wave:\nレビュー結果が出ましたのでご確認ください", true, false)
+		firstSection := slack.NewSectionBlock(firstTextBlock, nil, nil)
+		blocks := []slack.Block{firstSection, slack.NewDividerBlock()}
+		// var reviewString string
 
 		for _, fStruct := range reqJSON.Event.Files {
-			reviewString = reviewString + fStruct.Name + "\n"
+			blocks = append(blocks, slack.NewDividerBlock())
+
+			fileNameTextBlock := slack.NewTextBlockObject(slack.MarkdownType, "*"+fStruct.Name+"*", false, false)
+			blocks = append(blocks, slack.NewSectionBlock(fileNameTextBlock, nil, nil))
+			// reviewString = reviewString + fStruct.Name + "\n"
 			file, err := CreateTempDirAndFile(dirName, fStruct.Name)
 			if err != nil {
 				return err
@@ -173,11 +199,14 @@ func onAppMentioned(reqJSON *structs.RequestJSON, ev *slackevents.AppMentionEven
 				if c.Level == "" {
 					continue
 				}
-				reviewString = reviewString + c.CreateReviewLine(line)
+				blocks = append(blocks, c.CreateReviewBlock())
+				// reviewString = reviewString + c.CreateReviewLine()
 			}
-			reviewString = reviewString + "\n"
+			// reviewString = reviewString + "\n"
 		}
-		_, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText(reviewString, false))
+
+		// _, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText(reviewString, false))
+		_, _, err := api.PostMessage(ev.Channel, slack.MsgOptionBlocks(blocks...))
 		if err != nil {
 			util.ErrLog(err)
 			return err
@@ -203,7 +232,7 @@ func main() {
 	e.Use(middleware.Recover())
 
 	// Routes
-	e.GET("/events-endpoint", handle)
+	// e.GET("/events-endpoint", handle)
 	e.POST("/events-endpoint", handle)
 
 	// Start server

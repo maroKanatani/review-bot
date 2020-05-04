@@ -3,6 +3,8 @@ package structs
 import (
 	"fmt"
 	"strings"
+
+	"github.com/slack-go/slack"
 )
 
 type Verif struct {
@@ -52,12 +54,23 @@ func (c CheckInfo) ShowInfo() {
 	fmt.Println("【Type】" + c.CheckType)
 }
 
-func (c CheckInfo) CreateReviewLine(line string) string {
+func (c CheckInfo) CreateReviewLine() string {
 	lineInfo := "【行番号】" + c.LineNum + "行目 "
 	if c.ColumnNum != "" {
 		lineInfo = lineInfo + c.ColumnNum + "文字目"
 	}
 	message := "【内容】" + c.Message
-	s := []string{line, lineInfo, message}
+	s := []string{lineInfo, message}
 	return "\n" + strings.Join(s, "\n")
+}
+
+func (c CheckInfo) CreateReviewBlock() slack.Block {
+	text := fmt.Sprintf("*行番号* %s\n", c.LineNum)
+	if c.ColumnNum != "" {
+		text = text + fmt.Sprintf("*列番号* %s\n", c.ColumnNum)
+	}
+	text = text + fmt.Sprintf("*内容*\n %s", c.Message)
+
+	textBlock := slack.NewTextBlockObject(slack.MarkdownType, text, false, false)
+	return slack.NewSectionBlock(textBlock, nil, nil)
 }
