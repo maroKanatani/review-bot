@@ -140,7 +140,7 @@ func handle(c echo.Context) error {
 				s, err := cmd.CombinedOutput()
 				if err != nil {
 					fmt.Println(string(s))
-					log.Fatal(err)
+					return err
 				}
 				// lines := strings.Split(string(s), "\n")
 
