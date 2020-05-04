@@ -113,6 +113,14 @@ func handle(c echo.Context) error {
 				}
 				log.Println(string(ls))
 
+				cmd = exec.Command("cat", reqJSON.Event.Files[0].Name)
+				ls, err = cmd.CombinedOutput()
+				if err != nil {
+					errLog(err)
+					return err
+				}
+				log.Println(string(ls))
+
 				cmd = exec.Command("ls", "-laH", "..")
 				ls, err = cmd.CombinedOutput()
 				if err != nil {
