@@ -96,13 +96,6 @@ func handle(c echo.Context) error {
 				return err
 			}
 
-			break
-		// _, _, err = api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
-		// if err != nil {
-		// 	util.ErrLog(err)
-		// 	return err
-		// }
-
 		case *slackevents.MessageEvent:
 			log.Println("---------------------------")
 			log.Printf("%+v\n", ev)
@@ -162,7 +155,7 @@ func onAppMentioned(reqJSON *structs.RequestJSON, channel string) error {
 
 	if len(reqJSON.Event.Files) == 0 {
 		log.Println("No files .")
-		_, _, err := api.PostMessage(channel, slack.MsgOptionText("こんにちは！review-botです。\n私にMentionを付けてファイルを送信してください。", false))
+		_, _, err := api.PostMessage(channel, slack.MsgOptionText("こんにちは！review-botです。\n私にMentionを付けて.javaファイルを送信してください。", false))
 		if err != nil {
 			util.ErrLog(err)
 			return err
@@ -172,14 +165,17 @@ func onAppMentioned(reqJSON *structs.RequestJSON, channel string) error {
 		firstTextBlock := slack.NewTextBlockObject(slack.PlainTextType, "お疲れ様です:wave:\nレビュー結果が出ましたのでご確認ください", true, false)
 		firstSection := slack.NewSectionBlock(firstTextBlock, nil, nil)
 		blocks := []slack.Block{firstSection}
-		// var reviewString string
 
 		for _, fStruct := range reqJSON.Event.Files {
-			blocks = append(blocks, slack.NewDividerBlock())
+			if fStruct.FileType != "java" {
+				_, _, err := api.PostMessage(channel, slack.MsgOptionText(":warning:.java以外のファイルが含まれています。\nファイルを見直してから再度.javaファイルを送信してください。", false))
+				if err != nil {
+					util.ErrLog(err)
+					return err
+				}
+				break
+			}
 
-			fileNameTextBlock := slack.NewTextBlockObject(slack.MarkdownType, "*"+fStruct.Name+"*", false, false)
-			blocks = append(blocks, slack.NewSectionBlock(fileNameTextBlock, nil, nil))
-			// reviewString = reviewString + fStruct.Name + "\n"
 			file, err := CreateTempDirAndFile(dirName, fStruct.Name)
 			if err != nil {
 				return err
@@ -191,36 +187,57 @@ func onAppMentioned(reqJSON *structs.RequestJSON, channel string) error {
 			}
 			defer file.Close()
 
-			const CheckStyleJar = "checkstyle-8.32-all.jar"
-			const StyleXML = "mycheck.xml"
-			fPath := filepath.Join(dirName, fStruct.Name)
-			cmd := exec.Command("java", "-jar", CheckStyleJar, "-c", StyleXML, fPath)
-
-			reviewResult, err := cmd.CombinedOutput()
+			checkList, err := execCheckStyle(filepath.Join(dirName, fStruct.Name))
 			if err != nil {
-				fmt.Println(string(reviewResult))
+				util.ErrLog(err)
 				return err
 			}
-			lines := strings.Split(string(reviewResult), "\n")
-			for _, line := range lines {
-				c := divCheckLine(line)
-				if c.Level == "" {
-					continue
-				}
-				blocks = append(blocks, c.CreateReviewBlock())
-				// reviewString = reviewString + c.CreateReviewLine()
+
+			blocks = append(blocks, slack.NewDividerBlock())
+			fileNameTextBlock := slack.NewTextBlockObject(slack.MarkdownType, "*"+fStruct.Name+"*", false, false)
+			blocks = append(blocks, slack.NewSectionBlock(fileNameTextBlock, nil, nil))
+			// lines := strings.Split(string(reviewResult), "\n")
+			if len(checkList) == 0 {
+				blocks = append(blocks, slack.NewSectionBlock(slack.NewTextBlockObject(slack.MarkdownType, "*指摘は特にありません:ok_hand:*", true, false), nil, nil))
 			}
-			// reviewString = reviewString + "\n"
+
+			for _, c := range checkList {
+				blocks = append(blocks, c.CreateReviewBlock())
+			}
 		}
 
-		// _, _, err := api.PostMessage(ev.Channel, slack.MsgOptionText(reviewString, false))
 		_, _, err := api.PostMessage(channel, slack.MsgOptionBlocks(blocks...))
 		if err != nil {
 			util.ErrLog(err)
 			return err
 		}
+
 	}
 	return nil
+}
+
+func execCheckStyle(filePath string) ([]structs.CheckInfo, error) {
+	const CheckStyleJar = "checkstyle-8.32-all.jar"
+	const StyleXML = "mycheck.xml"
+
+	cmd := exec.Command("java", "-jar", CheckStyleJar, "-c", StyleXML, filePath)
+
+	reviewResult, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(reviewResult))
+		return nil, err
+	}
+	lines := strings.Split(string(reviewResult), "\n")
+
+	var checkList []structs.CheckInfo
+	for _, line := range lines {
+		c := divCheckLine(line)
+		if c.Level == "" {
+			continue
+		}
+		checkList = append(checkList, c)
+	}
+	return checkList, nil
 }
 
 func main() {
