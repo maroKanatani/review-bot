@@ -14,6 +14,8 @@
  -->
 
 <module name = "Checker">
+    <property name="localeCountry" value="JP"/>
+    <property name="localeLanguage" value="ja"/>
     <property name="tabWidth" value="2"/>
     <property name="charset" value="UTF-8"/>
 
