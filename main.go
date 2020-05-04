@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -134,7 +135,8 @@ func handle(c echo.Context) error {
 
 				const CheckStyleJar = "checkstyle-8.32-all.jar"
 				const StyleXML = "mycheck.xml"
-				cmd = exec.Command("java", "-jar", CheckStyleJar, "-c", StyleXML, reqJSON.Event.Files[0].Name)
+				path := filepath.Join(dirName, reqJSON.Event.Files[0].Name)
+				cmd = exec.Command("java", "-jar", CheckStyleJar, "-c", StyleXML, path)
 				s, err := cmd.CombinedOutput()
 				if err != nil {
 					fmt.Println(string(s))
