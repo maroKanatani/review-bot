@@ -54,6 +54,10 @@ func divCheckLine(line string) structs.CheckInfo {
 
 func handle(c echo.Context) error {
 	r := c.Request()
+	log.Println(r.Header.Get("X-Slack-Retry-Num"))
+	if r.Header.Get("X-Slack-Retry-Num") != "" {
+		return c.String(200, "OK")
+	}
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(r.Body)
 	body := buf.String()
@@ -92,6 +96,7 @@ func handle(c echo.Context) error {
 				return err
 			}
 
+			break
 		// _, _, err = api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
 		// if err != nil {
 		// 	util.ErrLog(err)
