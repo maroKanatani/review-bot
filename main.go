@@ -262,7 +262,7 @@ func divErrCheckLines(lines []string) []structs.CheckInfo {
 			c.FileName = f
 			c.FileFullPath = fileFullPath
 
-			c.Message = "上記の行、列番号でコンパイルエラーが発生しています。\n*エラー文字* " + string(bytes) + "\n*文字コード* " + errChar + "エラー文字が表示されない場合は0スペース空白や改行等の可能性があります。"
+			c.Message = "上記の行、列番号でコンパイルエラーが発生しています。\n*エラー文字* " + string(bytes) + "\n*文字コード* " + errChar + "\n※エラー文字が表示されない場合は0スペース空白や改行等の可能性があります。"
 			checkList = append(checkList, c)
 		}
 	}
