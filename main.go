@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"review-bot/structs"
 	"review-bot/util"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -223,12 +224,52 @@ func execCheckStyle(filePath string) ([]structs.CheckInfo, error) {
 	cmd := exec.Command("java", "-jar", CheckStyleJar, "-c", StyleXML, filePath)
 
 	reviewResult, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(reviewResult))
-		return nil, err
-	}
+	fmt.Println(string(reviewResult))
 	lines := strings.Split(string(reviewResult), "\n")
+	var checkList []structs.CheckInfo
+	if err != nil {
+		fmt.Println("### This File Has Error ")
+		checkList = divErrCheckLines(lines)
+	} else {
+		checkList = divCheckLines(lines)
+	}
 
+	return checkList, nil
+}
+
+func divErrCheckLines(lines []string) []structs.CheckInfo {
+	// lastMessage := lines[len(lines)-1]
+	firstMsgTokens := strings.Split(lines[0], " ")
+	fileFullPath := firstMsgTokens[len(firstMsgTokens)-1]
+
+	checkList := []structs.CheckInfo{}
+	for _, line := range lines {
+		if strings.Contains(line, "Caused by: line") {
+			tokens := strings.Split(line, " ")
+			errChar := tokens[6]
+			errCharInt, _ := strconv.Atoi(tokens[6])
+			bytes := []byte{byte(errCharInt)}
+
+			lineAndColumn := strings.Split(tokens[3], ":")
+
+			var c structs.CheckInfo
+			c.Level = "ERROR"
+			c.CheckType = "CompileError"
+
+			c.LineNum = lineAndColumn[0]
+			c.ColumnNum = lineAndColumn[1]
+			_, f := filepath.Split(fileFullPath)
+			c.FileName = f
+			c.FileFullPath = fileFullPath
+
+			c.Message = "上記の行、列番号でコンパイルエラーが発生しています。\n*エラー文字* " + string(bytes) + "\n*文字コード* " + errChar + "エラー文字が表示されない場合は0スペース空白や改行等の可能性があります。"
+			checkList = append(checkList, c)
+		}
+	}
+	return checkList
+}
+
+func divCheckLines(lines []string) []structs.CheckInfo {
 	var checkList []structs.CheckInfo
 	for _, line := range lines {
 		c := divCheckLine(line)
@@ -237,7 +278,7 @@ func execCheckStyle(filePath string) ([]structs.CheckInfo, error) {
 		}
 		checkList = append(checkList, c)
 	}
-	return checkList, nil
+	return checkList
 }
 
 func main() {
