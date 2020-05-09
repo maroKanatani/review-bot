@@ -39,7 +39,7 @@
 ![step9](https://user-images.githubusercontent.com/16130443/81471797-b4576a00-922e-11ea-8bbd-e0fc43d3fb71.png)
 
 
-9. Allow をクリックする
+9. Allow をクリックする  
 ![step10](https://user-images.githubusercontent.com/16130443/81471799-b7525a80-922e-11ea-8306-82bff06f545c.png)
 
 10. OAuth Token が生成されるので控えておく
