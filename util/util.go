@@ -20,3 +20,12 @@ func NewSecret(n int) string {
 	}
 	return string(b)
 }
+
+func IndexOf(array []string, target string) int {
+	for i, element := range array {
+		if element == target {
+			return i
+		}
+	}
+	return -1
+}

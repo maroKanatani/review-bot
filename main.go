@@ -15,13 +15,24 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"github.com/pkg/errors"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 )
 
-// You more than likely want your "Bot User OAuth Access Token" which starts with "xoxb-"
-var token = os.Getenv("TOKEN")
-var api = slack.New(token)
+var oauthTokens = strings.Split(os.Getenv("OAUTH_TOKENS"), ":")
+var clientTokens = strings.Split(os.Getenv("CLIENT_TOKENS"), ":")
+
+func createAPIClient(clientToken string) (*slack.Client, error) {
+	index := util.IndexOf(clientTokens, clientToken)
+	if index == -1 || index >= len(oauthTokens) {
+		log.Println("Client Token : " + clientToken)
+		err := errors.New("Failed to create API client .")
+		return nil, err
+	}
+	oauthToken := oauthTokens[index]
+	return slack.New(oauthToken), nil
+}
 
 func divCheckLine(line string) structs.CheckInfo {
 	log.Println(line)
@@ -153,6 +164,11 @@ func onAppMentioned(reqJSON *structs.RequestJSON, channel string) error {
 	log.Println("---------------------------")
 	log.Printf("%+v\n", reqJSON)
 	log.Println("---------------------------")
+	api, err := createAPIClient(reqJSON.Token)
+	if err != nil {
+		util.ErrLog(err)
+		return err
+	}
 
 	if len(reqJSON.Event.Files) == 0 {
 		log.Println("No files .")
