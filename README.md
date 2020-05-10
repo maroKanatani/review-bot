@@ -1,5 +1,11 @@
 # Review Bot
 
+## 使い方
+
+@review_botにメンションを付けて.javaファイルを送信する。  
+現状では各ChannelやDirect messagesにreview_botが招待されていないといけません。
+![howtouse](https://user-images.githubusercontent.com/16130443/81488362-b6f3a700-92a2-11ea-9d6c-5e7494f2c24e.gif)
+
 ## 導入手順
 
 1. ブラウザからSlackにログインする
