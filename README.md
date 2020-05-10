@@ -4,7 +4,7 @@
 
 @review_botにメンションを付けて.javaファイルを送信する。  
 現状では各ChannelやDirect messagesにreview_botが招待されていないといけません。
-![howtouse](https://user-images.githubusercontent.com/16130443/81488362-b6f3a700-92a2-11ea-9d6c-5e7494f2c24e.gif)
+![howtouse](https://user-images.githubusercontent.com/16130443/81488447-d7703100-92a3-11ea-91d5-ec53ae873f1d.gif)
 
 ## 導入手順
 
